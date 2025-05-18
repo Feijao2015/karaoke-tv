@@ -1,46 +1,82 @@
-# Getting Started with Create React App
+# Karaoke TV App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplicativo de Karaokê otimizado para Samsung TV (Tizen) que exibe a fila de músicas, reproduz vídeos do YouTube e mostra classificações em tempo real.
 
-## Available Scripts
+## Requisitos
 
-In the project directory, you can run:
+- Node.js 18+
+- Conta no Supabase
+- Aplicativo móvel para gerenciamento de músicas
 
-### `npm start`
+## Configuração
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+1. Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/karaoke-tv.git
+cd karaoke-tv
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+2. Instale as dependências:
+```bash
+npm install
+```
 
-### `npm test`
+3. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+```
+REACT_APP_SUPABASE_URL=sua_url_do_supabase
+REACT_APP_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+4. Inicie o servidor de desenvolvimento:
+```bash
+npm start
+```
 
-### `npm run build`
+## Estrutura do Banco de Dados (Supabase)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Tabela: queue_songs
+- id: uuid (primary key)
+- title: text
+- singer_name: text
+- youtube_url: text
+- created_at: timestamp
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Tabela: rankings
+- id: uuid (primary key)
+- singer_name: text
+- song_title: text
+- score: integer
+- created_at: timestamp
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Otimizações para TV
 
-### `npm run eject`
+- Interface adaptada para telas grandes
+- Fontes maiores e legíveis
+- Navegação otimizada para controle remoto
+- Áreas seguras para diferentes tipos de TV
+- Feedback visual claro para seleção
+- Animações suaves
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Recursos
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Exibição da fila de músicas em tempo real
+- Reprodução de vídeos do YouTube
+- Sistema de pontuação
+- Classificação dos cantores
+- Animações de pontuação
+- Sincronização em tempo real com Supabase
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## Desenvolvimento
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+O projeto usa as seguintes tecnologias:
 
-## Learn More
+- React 18
+- TypeScript
+- Tailwind CSS
+- React Query
+- Supabase
+- YouTube Player API
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Licença
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+MIT
