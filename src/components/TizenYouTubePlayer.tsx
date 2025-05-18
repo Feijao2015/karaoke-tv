@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import YouTube from 'react-youtube';
 
 interface TizenYouTubePlayerProps {
   videoId: string;
@@ -9,51 +8,28 @@ interface TizenYouTubePlayerProps {
 const TizenYouTubePlayer: React.FC<TizenYouTubePlayerProps> = ({ videoId, onEnd }) => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const playerRef = useRef<any>(null);
-
-  const opts = {
-    height: '100%',
-    width: '100%',
-    playerVars: {
-      // Tizen-optimized parameters
-      autoplay: 1,
-      controls: 1,
-      rel: 0,
-      modestbranding: 1,
-      playsinline: 1,
-      enablejsapi: 1,
-      origin: window.location.origin,
-    },
-  };
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    // Cleanup function
-    return () => {
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          console.error('Error destroying player:', e);
-        }
+    // Simple approach using direct iframe
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&enablejsapi=0&rel=0&showinfo=0`;
+    
+    if (iframeRef.current) {
+      iframeRef.current.src = embedUrl;
+    }
+
+    // Basic message handling for video end
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === 'videoEnded') {
+        onEnd?.();
       }
     };
-  }, []);
 
-  const handleReady = (event: any) => {
-    playerRef.current = event.target;
-    setIsReady(true);
-    setError(null);
-  };
-
-  const handleError = (event: any) => {
-    console.error('YouTube Player Error:', event);
-    setError('Error loading video. Please try again.');
-    setIsReady(false);
-  };
-
-  const handleEnd = () => {
-    onEnd?.();
-  };
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [videoId, onEnd]);
 
   return (
     <div className="relative w-full h-full bg-black">
@@ -63,19 +39,14 @@ const TizenYouTubePlayer: React.FC<TizenYouTubePlayerProps> = ({ videoId, onEnd 
         </div>
       )}
       
-      {!isReady && !error && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-16 h-16 border-4 border-t-4 border-white rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      <YouTube
-        videoId={videoId}
-        opts={opts}
-        onReady={handleReady}
-        onError={handleError}
-        onEnd={handleEnd}
-        className={`w-full h-full ${isReady ? 'opacity-100' : 'opacity-0'}`}
+      <iframe
+        ref={iframeRef}
+        className="w-full h-full"
+        frameBorder="0"
+        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        onError={() => setError('Error loading video. Please try again.')}
+        onLoad={() => setIsReady(true)}
       />
     </div>
   );
