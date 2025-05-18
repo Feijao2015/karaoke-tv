@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Karaokê TV</title>
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="samsung:video_support" content="true">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #player {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: calc(100vw - 300px);
+            height: 100vh;
+            background: #000;
+        }
+
+        #queue {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background 0.3s;
+        }
+
+        .queue-item:hover,
+        .queue-item:focus,
+        .queue-item.active {
+            background: rgba(255,255,255,0.3);
+            outline: none;
+        }
+
+        .singer-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #error {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <div id="queue"></div>
+    <div id="error"></div>
+    <div id="loading">Carregando...</div>
+
+    <script>
+        // Configuração do Supabase
+        const SUPABASE_URL = 'SUPABASE_URL';
+        const SUPABASE_KEY = 'SUPABASE_ANON_KEY';
+        
+        // Variáveis globais
+        let currentQueue = [];
+        let currentVideoId = null;
+        let currentIndex = -1;
+
+        // Funções utilitárias
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Funções de vídeo
+        function playVideo(videoId, index) {
+            currentVideoId = videoId;
+            currentIndex = index;
+            
+            const playerDiv = document.getElementById('player');
+            playerDiv.innerHTML = `
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&showinfo=0" 
+                    frameborder="0" 
+                    allowfullscreen>
+                </iframe>
+            `;
+
+            updateQueueHighlight();
+        }
+
+        function updateQueueHighlight() {
+            document.querySelectorAll('.queue-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (currentIndex >= 0) {
+                const items = document.querySelectorAll('.queue-item');
+                if (items[currentIndex]) {
+                    items[currentIndex].classList.add('active');
+                    items[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+        // Funções de fila
+        async function loadQueue() {
+            try {
+                showLoading(true);
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/queue?select=*&order=queue_position.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Erro ao carregar a fila');
+                
+                const queue = await response.json();
+                currentQueue = queue;
+                
+                const queueDiv = document.getElementById('queue');
+                queueDiv.innerHTML = queue.map((item, index) => `
+                    <div class="queue-item" tabindex="0" onclick="playVideo('${item.song_id}', ${index})">
+                        <div class="singer-name">${item.singer_name}</div>
+                    </div>
+                `).join('');
+                
+                // Auto-play primeiro vídeo se nenhum estiver tocando
+                if (currentVideoId === null && queue.length > 0) {
+                    playVideo(queue[0].song_id, 0);
+                } else {
+                    updateQueueHighlight();
+                }
+            } catch (error) {
+                showError('Erro ao carregar a fila: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Navegação
+        function navigateQueue(direction) {
+            const newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < currentQueue.length) {
+                playVideo(currentQueue[newIndex].song_id, newIndex);
+            }
+        }
+
+        // Controle remoto
+        document.addEventListener('keydown', (e) => {
+            switch(e.keyCode) {
+                case 38: // Cima
+                    navigateQueue(-1);
+                    break;
+                case 40: // Baixo
+                    navigateQueue(1);
+                    break;
+                case 13: // Enter
+                    if (document.activeElement.classList.contains('queue-item')) {
+                        document.activeElement.click();
+                    }
+                    break;
+                case 10009: // Return
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQueue();
+            // Atualiza a fila a cada 10 segundos
+            setInterval(loadQueue, 10000);
+        });
+    </script>
+</body>
+</html> 
