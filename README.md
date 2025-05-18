@@ -2,7 +2,7 @@
 
 Aplicativo de Karaokê otimizado para Samsung TV (Tizen) que exibe a fila de músicas, reproduz vídeos do YouTube e mostra classificações em tempo real.
 
-## Requisitosss
+## Requisitos
 
 - Node.js 18+
 - Conta no Supabase
