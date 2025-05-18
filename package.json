@@ -16,6 +16,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "postcss": "^8.4.33",
+    "preact": "^10.19.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -25,9 +26,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "react-app-rewired start",
+    "build": "set GENERATE_SOURCEMAP=false && react-app-rewired build && node scripts/optimize-for-tizen.js",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -38,14 +39,18 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
+      "Chrome >= 47",
       "not dead",
-      "not op_mini all"
+      "not ie <= 11"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "customize-cra": "^1.0.0",
+    "react-app-rewired": "^2.2.1"
   }
 }
