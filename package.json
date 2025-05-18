@@ -27,7 +27,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "set GENERATE_SOURCEMAP=false && react-app-rewired build && node scripts/optimize-for-tizen.js",
+    "build": "set GENERATE_SOURCEMAP=false && react-app-rewired build && node scripts/optimize-for-tizen.js && node scripts/update-tv-html.js",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },

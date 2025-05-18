@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Karaoke TV</title>
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="screen-orientation" content="landscape">
+    <meta name="samsung:video_support" content="true">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        #player {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+        #queue {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .queue-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .queue-item.active {
+            background: rgba(255,255,255,0.3);
+        }
+        #error {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="player"></div>
+    <div id="queue"></div>
+    <div id="error"></div>
+
+    <script>
+        // Simple queue management
+        let currentQueue = [];
+        let currentVideoId = null;
+
+        // Basic error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Load and display queue
+        async function loadQueue() {
+            try {
+                const response = await fetch('SUPABASE_URL/rest/v1/queue?select=*&order=queue_position.asc', {
+                    headers: {
+                        'apikey': 'SUPABASE_ANON_KEY',
+                        'Authorization': 'Bearer SUPABASE_ANON_KEY'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to load queue');
+                
+                const queue = await response.json();
+                currentQueue = queue;
+                
+                const queueDiv = document.getElementById('queue');
+                queueDiv.innerHTML = queue.map((item, index) => `
+                    <div class="queue-item ${currentVideoId === item.song_id ? 'active' : ''}" 
+                         onclick="playVideo('${item.song_id}')">
+                        ${index + 1}. ${item.singer_name}
+                    </div>
+                `).join('');
+                
+                // Auto-play first video if none is playing
+                if (!currentVideoId && queue.length > 0) {
+                    playVideo(queue[0].song_id);
+                }
+            } catch (error) {
+                showError('Error loading queue: ' + error.message);
+            }
+        }
+
+        // Play video function
+        function playVideo(videoId) {
+            currentVideoId = videoId;
+            const playerDiv = document.getElementById('player');
+            playerDiv.innerHTML = `
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&showinfo=0" 
+                    frameborder="0" 
+                    allowfullscreen>
+                </iframe>
+            `;
+            
+            // Update queue display
+            const queueItems = document.querySelectorAll('.queue-item');
+            queueItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.onclick.toString().includes(videoId)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQueue();
+            // Refresh queue every 10 seconds
+            setInterval(loadQueue, 10000);
+        });
+
+        // Handle remote control
+        document.addEventListener('keydown', (e) => {
+            switch(e.keyCode) {
+                case 38: // Up
+                    navigateQueue(-1);
+                    break;
+                case 40: // Down
+                    navigateQueue(1);
+                    break;
+                case 13: // Enter
+                    playCurrentSelection();
+                    break;
+                case 10009: // Return
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        function navigateQueue(direction) {
+            const currentIndex = currentQueue.findIndex(item => item.song_id === currentVideoId);
+            const newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < currentQueue.length) {
+                playVideo(currentQueue[newIndex].song_id);
+            }
+        }
+
+        function playCurrentSelection() {
+            const activeItem = document.querySelector('.queue-item.active');
+            if (activeItem) {
+                activeItem.click();
+            }
+        }
+    </script>
+</body>
+</html> 
